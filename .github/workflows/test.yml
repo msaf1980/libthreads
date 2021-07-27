@@ -1,0 +1,55 @@
+name: tests
+
+on: [push]
+
+jobs:
+  build:
+    name: ${{ matrix.config.name }}
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+        - {
+            name: "Ubuntu 20.04 GCC", artifact: "Linux.tar.xz",
+            os: ubuntu-20.04,
+            build_type: "Release", cc: "gcc", cxx: "g++"
+          }
+        - {
+            name: "Ubuntu 20.04 Clang", artifact: "Linux.tar.xz",
+            os: ubuntu-20.04,
+            build_type: "Release", cc: "clang", cxx: "clang++"
+          }
+        - {
+            name: "macOS 10.15 Clang", artifact: "macOS.tar.xz",
+            os: macos-10.15,
+            build_type: "Release", cc: "clang", cxx: "clang++"
+          }
+
+    steps:
+    - uses: actions/checkout@v1
+
+    - name: Dependecies
+      run:   |
+        if [ "$RUNNER_OS" == "Linux" ]; then
+          sudo apt-get install -y cmake gcc g++ || exit 1
+        elif [ "$RUNNER_OS" == "macOS" ]; then
+          #brew update > /dev/null
+          echo "No dependecies on MacOS"
+        else
+          echo "$RUNNER_OS not supported"
+          exit 1
+        fi
+      shell: bash
+    - name: Build (Release)
+      run: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Release
+    - name: Build (Debug)
+      run: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Debug
+    - name: Build (Debug, ASAN)
+      run: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=ASanDebug
+    - name: Build (Release) (ASAN)
+      run: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=ASan
+    - name: Build (Debug, TSAN)
+      run: TIMEOUT=2400 LOOP_COUNT=1000000 ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=TSanDebug
+    - name: Build (Release) (TSAN)
+      run: TIMEOUT=2400 LOOP_COUNT=1000000 ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=TSan
