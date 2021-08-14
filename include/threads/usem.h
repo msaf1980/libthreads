@@ -128,6 +128,6 @@ USEM_INLINE void usem_signal_count(usem_t *sem, int count) {
 #error Unsupported platform! (No semaphore wrapper available)
 #endif
 
-#define USEM_INLINE static inline
+#undef USEM_INLINE
 
 #endif /* _THREADS_SEMAPHORE_H_ */
