@@ -118,7 +118,7 @@ USEM_INLINE void usem_signal(usem_t *sem) {
 	while (sem_post(sem) == -1);
 }
 
-USEM_INLINE void usem_signal_count(usem_t *sem, int count) {
+USEM_INLINE void usem_signal_count(usem_t *sem, ssize_t count) {
 	while (count-- > 0) {
 		while (sem_post(sem) == -1);
 	}
