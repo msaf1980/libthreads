@@ -14,10 +14,9 @@ task:
           - image: gcc:9
           - image: gcc:8
           - image: gcc:7
-          # - image: gcc:6
-          # - image: gcc:5
-          # - image: gcc:4.9
-          # - image: gcc:4.8
+          - image: gcc:6
+          - image: gcc:5
+          - image: gcc:4.9
     - name: Build (gcc, Debug)
       install_dependencies_script:
         - wget https://github.com/Kitware/CMake/releases/download/v3.21.0/cmake-3.21.0-linux-x86_64.sh -qO cmake.sh && sh cmake.sh --skip-license --prefix=/usr
@@ -32,7 +31,6 @@ task:
           - image: gcc:6
           - image: gcc:5
           - image: gcc:4.9
-          - image: gcc:4.8
     - name: Build (clang, Release)
       install_dependencies_script:
         - apt-get update

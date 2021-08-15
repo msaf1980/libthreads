@@ -125,23 +125,45 @@ void bench(size_t writers, size_t readers, size_t loop_count) {
 		perr == 0 ? "OK" : "ERR");
 }
 
+static void *signal_thread(void *p){
+	usem_t *sem = (usem_t *) p;
+	usem_signal(sem);
+	return NULL;
+}
+
+static int signal_post(pthread_t *tid, usem_t *sem) {
+	pthread_attr_t thr_attr;
+	pthread_attr_init(&thr_attr);
+	pthread_attr_setdetachstate(&thr_attr, PTHREAD_CREATE_JOINABLE);
+	usleep(500);
+	return pthread_create(tid, &thr_attr, signal_thread, sem);
+}
+
 CTEST_DATA(usem) {
     usem_t sem;
+	pthread_t tid;
 };
 
 CTEST_SETUP(usem) {
     usem_init(&data->sem, 0);
+	data->tid = 0;
 }
 
 CTEST_TEARDOWN(usem) {
+	if (data->tid > 0) {
+		pthread_join(data->tid, NULL);
+	}
 	usem_destroy(&data->sem);
 }
 
 CTEST2(usem, wait) {
 	int rc;
-	usem_signal(&data->sem);
+	int perr = signal_post(&data->tid, &data->sem);
+	ASSERT_EQUAL_D(0, perr, strerror(perr));
 	rc = usem_wait(&data->sem);
 	ASSERT_EQUAL(0, rc);
+	pthread_join(data->tid, NULL);
+	data->tid = 0;
 }
 
 CTEST2(usem, timed_wait_timeout) {
@@ -159,9 +181,12 @@ CTEST2(usem, timed_wait_timeout) {
 
 CTEST2(usem, timed_wait) {
 	int rc;
-	usem_signal(&data->sem);
-	rc = usem_timed_wait(&data->sem, 100);
+	int perr = signal_post(&data->tid, &data->sem);
+	ASSERT_EQUAL_D(0, perr, strerror(perr));
+	rc = usem_timed_wait(&data->sem, 2000);
 	ASSERT_EQUAL(0, rc);
+	pthread_join(data->tid, NULL);
+	data->tid = 0;
 }
 
 int main(int argc, const char *argv[]) {

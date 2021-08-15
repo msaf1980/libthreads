@@ -115,20 +115,41 @@ void bench(size_t writers, size_t readers, size_t loop_count) {
 		perr == 0 ? "OK" : "ERR");
 }
 
+static void *signal_thread(void *p){
+	lusem_t *lsem = (lusem_t *) p;
+	lusem_signal(lsem);
+	return NULL;
+}
+
+static int signal_post(pthread_t *tid, lusem_t *lsem) {
+	pthread_attr_t thr_attr;
+	pthread_attr_init(&thr_attr);
+	pthread_attr_setdetachstate(&thr_attr, PTHREAD_CREATE_JOINABLE);
+	usleep(1000);
+	return pthread_create(tid, &thr_attr, signal_thread, lsem);
+}
+
 CTEST_DATA(lusem) {
     lusem_t lsem;
+    pthread_t tid;
 };
 
 CTEST_SETUP(lusem) {
     lusem_init(&data->lsem, 0, 2);
+    data->tid = 0;
 }
 
 CTEST_TEARDOWN(lusem) {
+    if (data->tid > 0) {
+		pthread_join(data->tid, NULL);
+	}
 	lusem_destroy(&data->lsem);
 }
 
 CTEST2(lusem, wait) {
 	int rc;
+    int perr = signal_post(&data->tid, &data->lsem);
+	ASSERT_EQUAL_D(0, perr, strerror(perr));
 	lusem_signal(&data->lsem);
 	rc = lusem_wait(&data->lsem);
 	ASSERT_EQUAL(0, rc);
@@ -149,8 +170,9 @@ CTEST2(lusem, timed_wait_timeout) {
 
 CTEST2(lusem, timed_wait) {
 	int rc;
-	lusem_signal(&data->lsem);
-	rc = lusem_timed_wait(&data->lsem, 100);
+    int perr = signal_post(&data->tid, &data->lsem);
+	ASSERT_EQUAL_D(0, perr, strerror(perr));
+	rc = lusem_timed_wait(&data->lsem, 20000);
 	ASSERT_EQUAL(0, rc);
 }
 
