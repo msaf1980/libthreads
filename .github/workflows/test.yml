@@ -32,24 +32,31 @@ jobs:
     - name: Dependecies
       run:   |
         if [ "$RUNNER_OS" == "Linux" ]; then
-          sudo apt-get install -y cmake gcc g++ || exit 1
+          sudo sh -c "echo 'APT::Get::AllowUnauthenticated true;' > /etc/apt/apt.conf.d/disable-gpg.conf" || exit 1
+          sudo sh -c "echo 'Acquire::AllowInsecureRepositories true;' >> /etc/apt/apt.conf.d/disable-gpg.conf" || exit 1
+          sudo apt-get -y update || exit 1
+          sudo apt-get install -y cmake python3-pip git || exit 1
+          sudo pip3 install git+https://github.com/msaf1980/cget@custom_buildtype || exit 1
         elif [ "$RUNNER_OS" == "macOS" ]; then
           #brew update > /dev/null
-          echo "No dependecies on MacOS"
+          sudo pip install git+https://github.com/msaf1980/cget@custom_buildtype || exit 1
+          [ -x "/Library/Frameworks/Python.framework/Versions/2.7/bin/cget" ] && ln -s "/Library/Frameworks/Python.framework/Versions/2.7/bin/cget" /usr/local/bin/cget
         else
           echo "$RUNNER_OS not supported"
           exit 1
         fi
       shell: bash
     - name: Build (Release)
-      run: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Release
+      run: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Release -DBUILD_DEPS=static
+    - name: Build (Release, Shared)
+      run: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -DBUILD_DEPS=shared
     - name: Build (Debug)
-      run: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Debug
+      run: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Debug -DBUILD_DEPS=static
     - name: Build (Debug, ASAN)
-      run: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=ASanDebug
-    - name: Build (Release) (ASAN)
-      run: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=ASan
+      run: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=ASanDebug -DENABLE_UBSAN=ON -DBUILD_DEPS=static
     - name: Build (Debug, TSAN)
-      run: TIMEOUT=2400 LOOP_COUNT=1000000 ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=TSanDebug
+      run: TIMEOUT=2400 LOOP_COUNT=1000000 ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=TSanDebug -DBUILD_DEPS=static
+    - name: Build (Release) (ASAN)
+      run: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=ASan -DENABLE_UBSAN=ON -DBUILD_DEPS=static
     - name: Build (Release) (TSAN)
-      run: TIMEOUT=2400 LOOP_COUNT=1000000 ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=TSan
+      run: TIMEOUT=2400 LOOP_COUNT=1000000 ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=TSan -DBUILD_DEPS=static

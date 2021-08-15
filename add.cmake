@@ -1,3 +1,4 @@
-set_version(0 0 1)
+set(VERSION "0.0.2")
+set_version(VERSION VERSION_MAJOR VERSION_MINOR VERSION_PATCH VERSION_REVISION)
 add_subdirectory (src/threads)
 add_subdirectory (doc)

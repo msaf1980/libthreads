@@ -9,7 +9,13 @@ if(NOT HAVE_PTHREAD_BARRIER)
     list(APPEND REQUIRED_SOURCES ${PROJECT_SOURCE_DIR}/src/pthread_barrier.c)
 endif()
 
-set(TEST_LIBRARIES threads Threads::Threads)
+set(TEST_LIBRARIES Threads::Threads)
+
+if(BUILD_SHARED_LIBS)
+    list(APPEND TEST_LIBRARIES threads_shared ${LIBCONCURENT_SHARED})
+else()
+    list(APPEND TEST_LIBRARIES threads ${LIBCONCURENT})
+endif()
 
 # Build tests
 add_executable(test_utils
@@ -56,3 +62,42 @@ add_test(
     COMMAND $<TARGET_FILE:test_psem>
 )
 set_tests_properties(test_utils PROPERTIES LABELS "psem")
+
+add_executable(test_thpool
+    thpool_test.c
+    thpool/thpool_no_work.c
+    thpool/thpool_api.c
+    thpool/thpool_pause_resume.c
+    thpool/thpool_wait.c
+    thpool/thpool_worker_try_once.c
+    ${REQUIRED_SOURCES}
+)
+target_link_libraries(test_thpool ${TEST_LIBRARIES})
+#target_compile_options(test_thpool PRIVATE -Wdeclaration-after-statement)
+add_test(
+    NAME test_thpool
+    COMMAND $<TARGET_FILE:test_thpool>
+)
+set_tests_properties(test_thpool PROPERTIES LABELS "thpool")
+
+add_executable(bench_thpool thpool_bench.c ${REQUIRED_SOURCES})
+target_link_libraries(bench_thpool ${TEST_LIBRARIES})
+
+add_executable(test_lfthpool
+    lfthpool_test.c
+    lfthpool/lfthpool_no_work.c
+    lfthpool/lfthpool_api.c
+    lfthpool/lfthpool_pause_resume.c
+    lfthpool/lfthpool_worker_try_once.c
+    ${REQUIRED_SOURCES}
+)
+target_link_libraries(test_lfthpool ${TEST_LIBRARIES})
+#target_compile_options(test_lfthpool PRIVATE -Wdeclaration-after-statement)
+add_test(
+    NAME test_lfthpool
+    COMMAND $<TARGET_FILE:test_lfthpool>
+)
+set_tests_properties(test_lfthpool PROPERTIES LABELS "lfthpool")
+
+add_executable(bench_lfthpool lfthpool_bench.c ${REQUIRED_SOURCES})
+target_link_libraries(bench_lfthpool ${TEST_LIBRARIES})

@@ -12,9 +12,26 @@ if(CMAKE_COMPILER_IS_GNU OR CMAKE_COMPILER_IS_CLANG)
 		#append_flag(CMAKE_EXE_LINKER_FLAGS_${BUILD_TYPE} "-lasan")
 	    #append_flag(CMAKE_SHARED_LINKER_FLAGS_${BUILD_TYPE} "-lasan")
 
-	    # For enable UBSan
+		set(ENABLE_VALGRIND OFF)
+	endif()
+
+	# UBSAN
+	if(ENABLE_UBSAN)
 		append_flag(CMAKE_C_FLAGS_${BUILD_TYPE} "-fsanitize=undefined")
 		append_flag(CMAKE_CXX_FLAGS_${BUILD_TYPE} "-fsanitize=undefined")
+		append_flag(CMAKE_C_FLAGS_${BUILD_TYPE} "-fsanitize=float-divide-by-zero")
+		append_flag(CMAKE_CXX_FLAGS_${BUILD_TYPE} "-fsanitize=float-divide-by-zero")
+		# append_flag(CMAKE_C_FLAGS_${BUILD_TYPE} "-fsanitize=implicit-conversion")
+		# append_flag(CMAKE_CXX_FLAGS_${BUILD_TYPE} "-fsanitize=implicit-conversion")
+		# append_flag(CMAKE_C_FLAGS_${BUILD_TYPE} "-fsanitize=implicit-integer-truncation")
+		# append_flag(CMAKE_CXX_FLAGS_${BUILD_TYPE} "-fsanitize=implicit-integer-truncation")
+		# append_flag(CMAKE_C_FLAGS_${BUILD_TYPE} "-fsanitize=integer")
+		# append_flag(CMAKE_CXX_FLAGS_${BUILD_TYPE} "-fsanitize=integer")
+		# append_flag(CMAKE_CXX_FLAGS_${BUILD_TYPE} "-fsanitize=nullability")
+		# append_flag(CMAKE_CXX_FLAGS_${BUILD_TYPE} "-fsanitize=vptr")
+		append_flag(CMAKE_C_FLAGS_${BUILD_TYPE} "-fno-omit-frame-pointer")
+		append_flag(CMAKE_CXX_FLAGS_${BUILD_TYPE} "-fno-omit-frame-pointer")
+
 		#append_flag(CMAKE_EXE_LINKER_FLAGS_${BUILD_TYPE} "-lubsan")
 	    #append_flag(CMAKE_SHARED_LINKER_FLAGS_${BUILD_TYPE} "-lubsan")
 

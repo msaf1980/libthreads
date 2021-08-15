@@ -2,14 +2,13 @@ set(
     THREADS_SOURCES
     utils.c
     lusem.c
+    thpool.c
+    lfthpool.c
 )
-
-if(NOT HAVE_PTHREAD_BARRIER)
-    list(APPEND THREADS_SOURCES ../pthread_barrier.c)
-endif()
 
 if(BUILD_SHARED_LIBS)
     add_library(threads_shared SHARED ${THREADS_SOURCES})
+    target_link_libraries(threads_shared ${LIBCONCURRENT_SHARED})
     set_target_properties(
         threads_shared
         PROPERTIES OUTPUT_NAME threads
@@ -17,6 +16,7 @@ if(BUILD_SHARED_LIBS)
                    VERSION "${VERSION}")
 endif()
 add_library(threads STATIC ${THREADS_SOURCES})
+target_link_libraries(threads ${LIBCONCURENT})
 set_target_properties(threads PROPERTIES OUTPUT_NAME threads)
 
 include(GNUInstallDirs)

@@ -6,9 +6,14 @@ task:
     - name: Build (gcc)
       install_dependencies_script:
         - wget https://github.com/Kitware/CMake/releases/download/v3.21.0/cmake-3.21.0-linux-x86_64.sh -qO cmake.sh && sh cmake.sh --skip-license --prefix=/usr
-      debug_script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Debug
-      release_script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Release
-      release_shared_script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON
+        - echo 'APT::Get::AllowUnauthenticated true;' > /etc/apt/apt.conf.d/disable-gpg.conf
+        - echo 'Acquire::AllowInsecureRepositories true;' >> /etc/apt/apt.conf.d/disable-gpg.conf
+        - apt-get -y update
+        - DEBIAN_FRONTEND=noninteractive apt-get install -y python3-pip git
+        - pip3 install git+https://github.com/msaf1980/cget@custom_buildtype
+      debug_script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Debug -DBUILD_DEPS=static
+      release_script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Release -DBUILD_DEPS=static
+      release_shared_script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -DBUILD_DEPS=shared
       container:
         matrix:
           - image: gcc:11
@@ -16,16 +21,38 @@ task:
           - image: gcc:9
           - image: gcc:8
           - image: gcc:7
+    - name: Build (gcc, python 3.4)
+      env:
+        LC_ALL: C.UTF-8
+        LANG: C.UTF-8
+      install_dependencies_script:
+        - wget https://github.com/Kitware/CMake/releases/download/v3.21.0/cmake-3.21.0-linux-x86_64.sh -qO cmake.sh && sh cmake.sh --skip-license --prefix=/usr
+        - echo 'APT::Get::AllowUnauthenticated true;' > /etc/apt/apt.conf.d/disable-gpg.conf
+        - echo 'Acquire::AllowInsecureRepositories true;' >> /etc/apt/apt.conf.d/disable-gpg.conf
+        - apt-get -y update
+        - DEBIAN_FRONTEND=noninteractive apt-get install -y python3-pip git
+        - pip3 install setuptools==40.3
+        - pip3 install click==6.6
+        - pip3 install git+https://github.com/msaf1980/cget@custom_buildtype
+      debug_script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Debug -DBUILD_DEPS=static
+      release_script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Release -DBUILD_DEPS=static
+      release_shared_script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -DBUILD_DEPS=shared
+      container:
+        matrix:
           - image: gcc:6
           - image: gcc:5
           - image: gcc:4.9
     - name: Build (clang)
       install_dependencies_script:
-        - apt-get update
         - wget https://github.com/Kitware/CMake/releases/download/v3.21.0/cmake-3.21.0-linux-x86_64.sh -qO cmake.sh && sh cmake.sh --skip-license --prefix=/usr
-      debug_script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
-      release_script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
-      release_shared_script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
+        - echo 'APT::Get::AllowUnauthenticated true;' > /etc/apt/apt.conf.d/disable-gpg.conf
+        - echo 'Acquire::AllowInsecureRepositories true;' >> /etc/apt/apt.conf.d/disable-gpg.conf
+        - apt-get -y update
+        - DEBIAN_FRONTEND=noninteractive apt-get install -y python3-pip git pkg-config
+        - pip3 install git+https://github.com/msaf1980/cget@custom_buildtype
+      debug_script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DBUILD_DEPS=static        
+      release_script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DBUILD_DEPS=static
+      release_shared_script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -DBUILD_DEPS=shared
       container:
         matrix:
           - image: silkeh/clang:11
@@ -37,31 +64,38 @@ task:
           - image: silkeh/clang:5
           - image: silkeh/clang:4
     - name: Build (gcc)
+      env:
+        LC_ALL: C.UTF-8
+        LANG: C.UTF-8
       install_dependencies_script:
-        - apt-get update
-        - apt-get install -y cmake gcc g++
-      debug_script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Debug
-      release_script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Release
-      release_shared_script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON
-      debug_asan_script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=ASanDebug -DENABLE_UBSAN=ON
-      debug_tsan_script: TIMEOUT=2400 LOOP_COUNT=1000000 ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=TSanDebug
-      release_asan_script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=ASan -DENABLE_UBSAN=ON
-      release_tsan_script: TIMEOUT=2400 LOOP_COUNT=1000000 ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=TSan
+        - echo 'APT::Get::AllowUnauthenticated true;' > /etc/apt/apt.conf.d/disable-gpg.conf
+        - echo 'Acquire::AllowInsecureRepositories true;' >> /etc/apt/apt.conf.d/disable-gpg.conf
+        - apt-get -y update
+        - DEBIAN_FRONTEND=noninteractive apt-get install -y python3-pip git cmake gcc g++ pkg-config
+        - pip3 install git+https://github.com/msaf1980/cget@custom_buildtype
+      debug_script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Debug -DBUILD_DEPS=static
+      release_script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Release -DBUILD_DEPS=static
+      release_shared_script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -DBUILD_DEPS=shared
+      debug_asan_script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=ASanDebug -DENABLE_UBSAN=ON -DBUILD_DEPS=static
+      debug_tsan_script: TIMEOUT=2400 LOOP_COUNT=1000000 ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=TSanDebug -DBUILD_DEPS=static
+      release_asan_script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=ASan -DENABLE_UBSAN=ON -DBUILD_DEPS=static
+      release_tsan_script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=TSan -DBUILD_DEPS=static
       container:
         matrix:
           - image: ubuntu:20.04
-          - image: ubuntu:16.04
+          - image: ubuntu:20.04
           - image: ubuntu:18.04
     - name: Build on FreeBSD
       install_dependencies_script:
-        - pkg install -y bash gmake cmake git
-      debug_script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Release
-      release_script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Debug
-      release_shared_script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON
-      debug_asan_script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=ASanDebug -DENABLE_UBSAN=ON
-      debug_tsan_script: TIMEOUT=2400 LOOP_COUNT=1000000 ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=TSanDebug
-      release_asan_script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=ASan -DENABLE_UBSAN=ON
-      release_tsan_script: TIMEOUT=2400 LOOP_COUNT=1000000 ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=TSan
+        - pkg install -y bash gmake cmake git python38 py38-pip pkgconf
+        - pip-3.8 install git+https://github.com/msaf1980/cget@custom_buildtype
+      debug_script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Debug -DBUILD_DEPS=static
+      release_script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Release -DBUILD_DEPS=static
+      release_shared_script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -DBUILD_DEPS=shared
+      debug_asan_script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=ASanDebug -DENABLE_UBSAN=ON -DBUILD_DEPS=static
+      debug_tsan_script: TIMEOUT=2400 LOOP_COUNT=1000000 ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=TSanDebug -DBUILD_DEPS=static
+      release_asan_script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=ASan -DENABLE_UBSAN=ON -DBUILD_DEPS=static
+      release_tsan_script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=TSan -DBUILD_DEPS=static
       freebsd_instance:
         matrix:
           #- image: freebsd-12-1-release-amd64
