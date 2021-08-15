@@ -146,13 +146,13 @@ CTEST2(usem, wait) {
 
 CTEST2(usem, timed_wait_timeout) {
 	int rc;
-	uint64_t timeout = 2000;
+	uint64_t timeout = 20000;
 	uint64_t start, duration;
 	start = getCurrentTime();
 	rc = usem_timed_wait(&data->sem, timeout);
 	duration = getCurrentTime() - start;
 	ASSERT_TRUE(rc != 0);
-	if (duration < timeout - 10 || duration > 2 * timeout) {
+	if (duration < timeout - 10 || duration > 6 * timeout) {
 		CTEST_ERR("timeout duration is %llu us, want %llu", (unsigned long long) duration, (unsigned long long) timeout);
 	}
 }
