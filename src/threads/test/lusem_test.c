@@ -8,7 +8,7 @@
 #include <string.h>
 #include <sys/time.h>
 
-#include <threads/usem.h>
+#include <threads/lusem.h>
 
 #include <pthread.h>
 #if NO_PTHREAD_BARRIER
@@ -24,21 +24,11 @@ size_t LOOP_COUNT = 1000000;
 
 int ret = 0;
 
-// static uint64_t getCurrentTime(void) {
-//     struct timeval now;
-//     uint64_t now64;
-//     gettimeofday(&now, NULL);
-//     now64 = (uint64_t) now.tv_sec;
-//     now64 *= 1000000;
-//     now64 += ((uint64_t) now.tv_usec);
-//     return now64;
-// }
-
 struct task_param {
 	size_t n;
 	size_t w;
 	size_t loop_count;
-	usem_t sem;
+	lusem_t lsem;
 	pthread_barrier_t start_barrier;
 };
 
@@ -46,7 +36,7 @@ static void *notify_thread(void *p){
 	struct task_param *param = (struct task_param *) p;
 	pthread_barrier_wait(&param->start_barrier);
 	while (__atomic_fetch_add(&param->n, 0, __ATOMIC_RELAXED) != 0) {
-		usem_signal(&param->sem);
+		lusem_signal(&param->lsem);
 	}
 	return NULL;
 }
@@ -54,7 +44,7 @@ static void *notify_thread(void *p){
 static void *wait_thread(void *p){
 	struct task_param *param = (struct task_param *) p;
 	while (__atomic_fetch_add(&param->w, 1, __ATOMIC_RELAXED) < param->loop_count) {
-		usem_wait(&param->sem);
+		lusem_wait(&param->lsem);
 	}
 	__atomic_fetch_sub(&param->n, 1, __ATOMIC_RELAXED);
 	return NULL;
@@ -71,7 +61,7 @@ void bench(size_t writers, size_t readers, size_t loop_count) {
 	param.n = readers;
 	param.w = 0;
 	param.loop_count = loop_count;
-	usem_init(&param.sem, 0);
+	lusem_init(&param.lsem, 0, 2);
 
 	pthread_barrier_init(&param.start_barrier, NULL, (unsigned int) writers + 1);
 
@@ -125,31 +115,31 @@ void bench(size_t writers, size_t readers, size_t loop_count) {
 		perr == 0 ? "OK" : "ERR");
 }
 
-CTEST_DATA(usem) {
-    usem_t sem;
+CTEST_DATA(lusem) {
+    lusem_t lsem;
 };
 
-CTEST_SETUP(usem) {
-    usem_init(&data->sem, 0);
+CTEST_SETUP(lusem) {
+    lusem_init(&data->lsem, 0, 2);
 }
 
-CTEST_TEARDOWN(usem) {
-	usem_destroy(&data->sem);
+CTEST_TEARDOWN(lusem) {
+	lusem_destroy(&data->lsem);
 }
 
-CTEST2(usem, wait) {
+CTEST2(lusem, wait) {
 	int rc;
-	usem_signal(&data->sem);
-	rc = usem_wait(&data->sem);
+	lusem_signal(&data->lsem);
+	rc = lusem_wait(&data->lsem);
 	ASSERT_EQUAL(0, rc);
 }
 
-CTEST2(usem, timed_wait_timeout) {
+CTEST2(lusem, timed_wait_timeout) {
 	int rc;
-	uint64_t timeout = 2000;
+    uint64_t timeout = 2000;
 	uint64_t start, duration;
 	start = getCurrentTime();
-	rc = usem_timed_wait(&data->sem, timeout);
+	rc = lusem_timed_wait(&data->lsem, timeout);
 	duration = getCurrentTime() - start;
 	ASSERT_TRUE(rc != 0);
 	if (duration < timeout - 10 || duration > 2 * timeout) {
@@ -157,10 +147,10 @@ CTEST2(usem, timed_wait_timeout) {
 	}
 }
 
-CTEST2(usem, timed_wait) {
+CTEST2(lusem, timed_wait) {
 	int rc;
-	usem_signal(&data->sem);
-	rc = usem_timed_wait(&data->sem, 100);
+	lusem_signal(&data->lsem);
+	rc = lusem_timed_wait(&data->lsem, 100);
 	ASSERT_EQUAL(0, rc);
 }
 
@@ -173,7 +163,7 @@ int main(int argc, const char *argv[]) {
 		}
 	}
 
-	ret += ctest_main(argc, argv);
+    ret += ctest_main(argc, argv);
 
 	bench(1, 4, LOOP_COUNT);
 	bench(4, 4, LOOP_COUNT);

@@ -1,6 +1,7 @@
 set(
     THREADS_SOURCES
     utils.c
+    lusem.c
 )
 
 if(NOT HAVE_PTHREAD_BARRIER)

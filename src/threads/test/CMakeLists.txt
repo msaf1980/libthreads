@@ -35,6 +35,17 @@ add_test(
 )
 set_tests_properties(test_usem PROPERTIES LABELS "usem")
 
+add_executable(test_lusem
+    lusem_test.c
+    ${REQUIRED_SOURCES}
+)
+target_link_libraries(test_lusem ${TEST_LIBRARIES})
+add_test(
+    NAME test_lusem
+    COMMAND $<TARGET_FILE:test_lusem>
+)
+set_tests_properties(test_lusem PROPERTIES LABELS "lusem")
+
 add_executable(test_psem
     psem_test.c
     ${REQUIRED_SOURCES}
@@ -44,5 +55,4 @@ add_test(
     NAME test_psem
     COMMAND $<TARGET_FILE:test_psem>
 )
-
 set_tests_properties(test_utils PROPERTIES LABELS "psem")

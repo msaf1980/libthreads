@@ -11,10 +11,12 @@
 
 #define USEM_INLINE static inline
 
-//---------------------------------------------------------
-// Semaphore (Apple iOS and OSX)
-// Can't use POSIX semaphores due to http://lists.apple.com/archives/darwin-kernel/2009/Apr/msg00010.html
-//---------------------------------------------------------
+/*
+* ---------------------------------------------------------
+* Semaphore (Apple iOS and OSX)
+* Can't use POSIX semaphores due to http://lists.apple.com/archives/darwin-kernel/2009/Apr/msg00010.html
+*---------------------------------------------------------
+*/
 
 #include <mach/mach.h>
 
@@ -37,7 +39,7 @@ USEM_INLINE int usem_timed_wait(usem_t *sem, uint64_t timeout_usecs) {
 	ts.tv_sec = (unsigned int) (timeout_usecs / 1000000);
 	ts.tv_nsec = (timeout_usecs % 1000000) * 1000;
 
-	// added in OSX 10.10: https://developer.apple.com/library/prerelease/mac/documentation/General/Reference/APIDiffsMacOSX10_10SeedDiff/modules/Darwin.html
+	/* added in OSX 10.10: https://developer.apple.com/library/prerelease/mac/documentation/General/Reference/APIDiffsMacOSX10_10SeedDiff/modules/Darwin.html */
 	return semaphore_timedwait(*sem, ts);
 }
 
@@ -57,9 +59,11 @@ USEM_INLINE void usem_signal_count(usem_t *sem, int count) {
 }
 
 #elif defined(__unix__)
-//---------------------------------------------------------
-// Semaphore (POSIX, Linux)
-//---------------------------------------------------------
+/*
+* ---------------------------------------------------------
+* Semaphore (POSIX, Linux)
+* ---------------------------------------------------------
+*/
 
 #include <semaphore.h>
 
@@ -101,8 +105,10 @@ USEM_INLINE int usem_timed_wait(usem_t *sem, uint64_t timeout_usecs) {
 	clock_gettime(CLOCK_REALTIME, &ts);
 	ts.tv_sec += (time_t)(timeout_usecs / usecs_in_1_sec);
 	ts.tv_nsec += (long)(timeout_usecs % usecs_in_1_sec) * 1000;
-	// sem_timedwait bombs if you have more than 1e9 in tv_nsec
-	// so we have to clean things up before passing it in
+	/*
+	sem_timedwait bombs if you have more than 1e9 in tv_nsec
+	so we have to clean things up before passing it in
+	*/
 	if (ts.tv_nsec >= nsecs_in_1_sec) {
 		ts.tv_nsec -= nsecs_in_1_sec;
 		++ts.tv_sec;
