@@ -18,43 +18,53 @@
 *---------------------------------------------------------
 */
 
-#include <mach/mach.h>
+#include <dispatch/dispatch.h>
 
-typedef semaphore_t usem_t;
+typedef dispatch_semaphore_t usem_t;
 
 USEM_INLINE int usem_init(usem_t *sem, unsigned int initial_count) {
-	return semaphore_create(mach_task_self(), sem, SYNC_POLICY_FIFO, (int) initial_count);
+	*sem = dispatch_semaphore_create(initial_count);
+	return 0;
 }
 
 USEM_INLINE int usem_destroy(usem_t *sem) {
-	return semaphore_destroy(mach_task_self(), *sem);
+	dispatch_release(*sem);
+	return 0;
 }
 
 USEM_INLINE int usem_wait(usem_t *sem) {
-	return semaphore_wait(*sem) == KERN_SUCCESS;
+	if (dispatch_semaphore_wait(*sem, DISPATCH_TIME_FOREVER) == 0) {
+		return 0;
+	}
+	errno = ETIMEDOUT;
+	return -1;
 }
 
 USEM_INLINE int usem_timed_wait(usem_t *sem, uint64_t timeout_usecs) {
-	mach_timespec_t ts;
-	ts.tv_sec = (unsigned int) (timeout_usecs / 1000000);
-	ts.tv_nsec = (timeout_usecs % 1000000) * 1000;
+	dispatch_time_t timeout = dispatch_time(DISPATCH_TIME_NOW, timeout_usecs * 1000);
 
-	/* added in OSX 10.10: https://developer.apple.com/library/prerelease/mac/documentation/General/Reference/APIDiffsMacOSX10_10SeedDiff/modules/Darwin.html */
-	return semaphore_timedwait(*sem, ts);
+	if (dispatch_semaphore_wait(*sem, timeout) == 0) {
+		return 0;
+	}
+	errno = ETIMEDOUT;
+	return -1;
 }
 
 USEM_INLINE int usem_try_wait(usem_t *sem) {
-	return usem_timed_wait(sem, 0);
+	if (dispatch_semaphore_wait(*sem, DISPATCH_TIME_NOW) == 0) {
+		return 0;
+	}
+	errno = ETIMEDOUT;
+	return -1;
 }
 
 USEM_INLINE void usem_signal(usem_t *sem) {
-	while (semaphore_signal(*sem) != KERN_SUCCESS);
+	dispatch_semaphore_signal(*sem);
 }
 
 USEM_INLINE void usem_signal_count(usem_t *sem, int count) {
-	while (count-- > 0)
-	{
-		while (semaphore_signal(*sem) != KERN_SUCCESS);
+	while (count-- > 0) {
+		usem_signal(sem);
 	}
 }
 

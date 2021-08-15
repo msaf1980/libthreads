@@ -140,7 +140,7 @@ CTEST_SETUP(lusem) {
 }
 
 CTEST_TEARDOWN(lusem) {
-    if (data->tid > 0) {
+    if (data->tid != 0) {
 		pthread_join(data->tid, NULL);
 	}
 	lusem_destroy(&data->lsem);
@@ -163,7 +163,7 @@ CTEST2(lusem, timed_wait_timeout) {
 	rc = lusem_timed_wait(&data->lsem, timeout);
 	duration = getCurrentTime() - start;
 	ASSERT_TRUE(rc != 0);
-	if (duration < timeout - 10 || duration > 6 * timeout) {
+	if (duration < 2 * timeout / 3 || duration > 6 * timeout) {
 		CTEST_ERR("timeout duration is %llu us, want %llu", (unsigned long long) duration, (unsigned long long) timeout);
 	}
 }
