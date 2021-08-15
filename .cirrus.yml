@@ -3,10 +3,12 @@ container:
 
 task:
   matrix:
-    - name: Build (gcc, Release)
+    - name: Build (gcc)
       install_dependencies_script:
         - wget https://github.com/Kitware/CMake/releases/download/v3.21.0/cmake-3.21.0-linux-x86_64.sh -qO cmake.sh && sh cmake.sh --skip-license --prefix=/usr
-      script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Release
+      debug_script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Debug
+      release_script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Release
+      release_shared_script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON
       container:
         matrix:
           - image: gcc:11
@@ -17,25 +19,13 @@ task:
           - image: gcc:6
           - image: gcc:5
           - image: gcc:4.9
-    - name: Build (gcc, Debug)
-      install_dependencies_script:
-        - wget https://github.com/Kitware/CMake/releases/download/v3.21.0/cmake-3.21.0-linux-x86_64.sh -qO cmake.sh && sh cmake.sh --skip-license --prefix=/usr
-      script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Debug
-      container:
-        matrix:
-          - image: gcc:11
-          - image: gcc:10
-          - image: gcc:9
-          - image: gcc:8
-          - image: gcc:7
-          - image: gcc:6
-          - image: gcc:5
-          - image: gcc:4.9
-    - name: Build (clang, Release)
+    - name: Build (clang)
       install_dependencies_script:
         - apt-get update
         - wget https://github.com/Kitware/CMake/releases/download/v3.21.0/cmake-3.21.0-linux-x86_64.sh -qO cmake.sh && sh cmake.sh --skip-license --prefix=/usr
-      script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
+      debug_script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
+      release_script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
+      release_shared_script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
       container:
         matrix:
           - image: silkeh/clang:11
@@ -46,127 +36,32 @@ task:
           - image: silkeh/clang:6
           - image: silkeh/clang:5
           - image: silkeh/clang:4
-    - name: Build (clang, Debug)
-      install_dependencies_script:
-        - apt-get update
-        - wget https://github.com/Kitware/CMake/releases/download/v3.21.0/cmake-3.21.0-linux-x86_64.sh -qO cmake.sh && sh cmake.sh --skip-license --prefix=/usr
-      script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
-      container:
-        matrix:
-          - image: silkeh/clang:11
-          - image: silkeh/clang:10
-          - image: silkeh/clang:9
-          - image: silkeh/clang:8
-          - image: silkeh/clang:7
-          - image: silkeh/clang:6
-          - image: silkeh/clang:5
-          - image: silkeh/clang:4
-    - name: Build (gcc, Debug)
+    - name: Build (gcc)
       install_dependencies_script:
         - apt-get update
         - apt-get install -y cmake gcc g++
-      script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Debug
+      debug_script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Debug
+      release_script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Release
+      release_shared_script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON
+      debug_asan_script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=ASanDebug -DENABLE_UBSAN=ON
+      debug_tsan_script: TIMEOUT=2400 LOOP_COUNT=1000000 ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=TSanDebug
+      release_asan_script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=ASan -DENABLE_UBSAN=ON
+      release_tsan_script: TIMEOUT=2400 LOOP_COUNT=1000000 ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=TSan
       container:
         matrix:
           - image: ubuntu:20.04
           - image: ubuntu:16.04
           - image: ubuntu:18.04
-    - name: Build (gcc, Release)
+    - name: Build on FreeBSD
       install_dependencies_script:
-        - apt-get update
-        - apt-get install -y cmake gcc g++
-      script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Release
-      container:
-        matrix:
-          - image: ubuntu:20.04
-          - image: ubuntu:16.04
-          - image: ubuntu:18.04
-    - name: Build (gcc, Debug, ASAN)
-      install_dependencies_script:
-        - apt-get update
-        - apt-get install -y cmake gcc g++
-      script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=ASanDebug
-      container:
-        matrix:
-          - image: ubuntu:20.04
-          - image: ubuntu:16.04
-          - image: ubuntu:18.04
-    - name: Build (gcc, Debug, TSAN)
-      #only_if: $CIRRUS_BRANCH == 'master' || $CIRRUS_TAG != '' || $CIRRUS_PR != ''
-      install_dependencies_script:
-        - apt-get update
-        - apt-get install -y cmake gcc g++
-      script: TIMEOUT=2400 LOOP_COUNT=1000000 ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=TSanDebug
-      container:
-        matrix:
-          - image: ubuntu:20.04
-          - image: ubuntu:16.04
-          - image: ubuntu:18.04
-    - name: Build (gcc, Release, ASAN)
-      install_dependencies_script:
-        - apt-get update
-        - apt-get install -y cmake gcc g++
-      script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=ASan
-      container:
-        matrix:
-          - image: ubuntu:20.04
-          - image: ubuntu:16.04
-          - image: ubuntu:18.04
-    - name: Build (gcc, Release, TSAN)
-      # only_if: $CIRRUS_BRANCH == 'master' || $CIRRUS_TAG != '' || $CIRRUS_PR != ''
-      install_dependencies_script:
-        - apt-get update
-        - apt-get install -y cmake gcc g++
-      script: TIMEOUT=2400 LOOP_COUNT=1000000 ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=TSan
-      container:
-        matrix:
-          - image: ubuntu:20.04
-          - image: ubuntu:16.04
-          - image: ubuntu:18.04
-    - name: Build (Debug)
-      install_dependencies_script:
-        - pkg install -y bash gmake cmake
-      script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Debug
-      freebsd_instance:
-        matrix:
-          #- image: freebsd-12-1-release-amd64
-          - image: freebsd-11-4-release-amd64
-    - name: Build on FreeBSD (Release)
-      install_dependencies_script:
-        - pkg install -y bash gmake cmake
-      script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Release
-      freebsd_instance:
-        matrix:
-          #- image: freebsd-12-1-release-amd64
-          - image: freebsd-11-4-release-amd64
-    - name: Build on FreeBSD (Debug, ASAN)
-      install_dependencies_script:
-        - pkg install -y bash gmake cmake
-      script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=ASanDebug
-      freebsd_instance:
-        matrix:
-          #- image: freebsd-12-1-release-amd64
-          - image: freebsd-11-4-release-amd64
-    - name: Build on FreeBSD (Release, ASAN)
-      install_dependencies_script:
-        - pkg install -y bash gmake cmake
-      script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=ASan
-      freebsd_instance:
-        matrix:
-          #- image: freebsd-12-1-release-amd64
-          - image: freebsd-11-4-release-amd64
-    - name: Build on FreeBSD (Debug, TSAN)
-      install_dependencies_script:
-        - pkg install -y bash gmake cmake
-      script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=TSanDebug
-      freebsd_instance:
-        matrix:
-          #- image: freebsd-12-1-release-amd64
-          - image: freebsd-11-4-release-amd64
-    - name: Build on FreeBSD (Release, TSAN)
-      install_dependencies_script:
-        - pkg install -y bash gmake cmake
-      script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=TSan
+        - pkg install -y bash gmake cmake git
+      debug_script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Release
+      release_script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Debug
+      release_shared_script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON
+      debug_asan_script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=ASanDebug -DENABLE_UBSAN=ON
+      debug_tsan_script: TIMEOUT=2400 LOOP_COUNT=1000000 ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=TSanDebug
+      release_asan_script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=ASan -DENABLE_UBSAN=ON
+      release_tsan_script: TIMEOUT=2400 LOOP_COUNT=1000000 ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=TSan
       freebsd_instance:
         matrix:
           #- image: freebsd-12-1-release-amd64
