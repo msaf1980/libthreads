@@ -33,7 +33,7 @@ CTEST(lfthpool_api, test) {
 	
 	lfthpool_wait(pool);
 	sched_yield();
-	usleep(200);
+	usleep(500);
 	lfthpool_wait(pool);
 
 	ASSERT_EQUAL_U(0, lfthpool_active_tasks(pool));
@@ -50,7 +50,7 @@ CTEST(lfthpool_api, test) {
 
 	lfthpool_wait(pool);
 	sched_yield();
-	usleep(200);
+	usleep(500);
 	lfthpool_wait(pool);
 
 	ASSERT_EQUAL_U(0, lfthpool_active_tasks(pool));
