@@ -152,7 +152,7 @@ CTEST2(lusem, wait) {
 	ASSERT_EQUAL_D(0, perr, strerror(perr));
 	lusem_signal(&data->lsem);
 	rc = lusem_wait(&data->lsem);
-	ASSERT_EQUAL(0, rc);
+	ASSERT_EQUAL_D(0, rc, strerror(errno));
 }
 
 CTEST2(lusem, timed_wait_timeout) {
@@ -162,8 +162,8 @@ CTEST2(lusem, timed_wait_timeout) {
 	start = getCurrentTime();
 	rc = lusem_timed_wait(&data->lsem, timeout);
 	duration = getCurrentTime() - start;
-	ASSERT_TRUE(rc != 0);
-	if (duration < 2 * timeout / 3 || duration > 6 * timeout) {
+	ASSERT_TRUE_D(rc != 0, strerror(errno));
+	if (duration < 2 * timeout / 3 || duration > 10 * timeout) {
 		CTEST_ERR("timeout duration is %llu us, want %llu", (unsigned long long) duration, (unsigned long long) timeout);
 	}
 }
