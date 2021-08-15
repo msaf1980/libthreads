@@ -184,7 +184,7 @@ CTEST2(usem, timed_wait) {
 	int perr = signal_post(&data->tid, &data->sem);
 	ASSERT_EQUAL_D(0, perr, strerror(perr));
 	rc = usem_timed_wait(&data->sem, 2000);
-	ASSERT_EQUAL(0, rc);
+	ASSERT_EQUAL_D(0, rc, strerror(errno));
 	pthread_join(data->tid, NULL);
 	data->tid = 0;
 }
