@@ -15,19 +15,24 @@
 #include "pthread_barrier.h"
 #endif
 
+#define CTEST_MAIN
+#define CTEST_SEGFAULT
+
+#include <ctest.h>
+
 size_t LOOP_COUNT = 1000000;
 
 int ret = 0;
 
-static uint64_t getCurrentTime(void) {
-    struct timeval now;
-    uint64_t now64;
-    gettimeofday(&now, NULL);
-    now64 = (uint64_t) now.tv_sec;
-    now64 *= 1000000;
-    now64 += ((uint64_t) now.tv_usec);
-    return now64;
-}
+// static uint64_t getCurrentTime(void) {
+//     struct timeval now;
+//     uint64_t now64;
+//     gettimeofday(&now, NULL);
+//     now64 = (uint64_t) now.tv_sec;
+//     now64 *= 1000000;
+//     now64 += ((uint64_t) now.tv_usec);
+//     return now64;
+// }
 
 struct task_param {
 	size_t n;
@@ -120,7 +125,45 @@ void bench(size_t writers, size_t readers, size_t loop_count) {
 		perr == 0 ? "OK" : "ERR");
 }
 
-int main() {
+CTEST_DATA(usem) {
+    usem_t sem;
+};
+
+CTEST_SETUP(usem) {
+    usem_init(&data->sem, 0);
+}
+
+CTEST_TEARDOWN(usem) {
+	usem_destroy(&data->sem);
+}
+
+CTEST2(usem, wait) {
+	int rc;
+	usem_signal(&data->sem);
+	rc = usem_wait(&data->sem);
+	ASSERT_EQUAL(0, rc);
+}
+
+CTEST2(usem, timed_wait_timeout) {
+	int rc;
+	uint64_t start, duration;
+	start = getCurrentTime();
+	rc = usem_timed_wait(&data->sem, 100);
+	duration = getCurrentTime() - start;
+	ASSERT_EQUAL(-1, rc);
+	if (duration < 90 || duration > 170) {
+		CTEST_ERR("timeout duration is %llu us, want 100", (unsigned long long) duration);
+	}
+}
+
+CTEST2(usem, timed_wait) {
+	int rc;
+	usem_signal(&data->sem);
+	rc = usem_timed_wait(&data->sem, 100);
+	ASSERT_EQUAL(0, rc);
+}
+
+int main(int argc, const char *argv[]) {
 	char *COUNT_STR = getenv("LOOP_COUNT");
 	if (COUNT_STR) {
 		unsigned long c = strtoul(COUNT_STR, NULL, 10);
@@ -128,6 +171,9 @@ int main() {
 			LOOP_COUNT = c;
 		}
 	}
+
+	ret += ctest_main(argc, argv);
+
 	bench(1, 4, LOOP_COUNT);
 	bench(4, 4, LOOP_COUNT);
 	return ret;
